@@ -80,13 +80,12 @@ void loop() {
 
     // Publish to MQTT
     // String payload = "{ \"moisture\": " + String(sensorValue) + ", \"voltage\": " + String(voltage, 2) + " }";
-    String payload = "{ \"moisture\": " + String(sensorValue) + " }";
-    client.publish(mqtt_topic, payload.c_str());
+    // client.publish(mqtt_topic, payload.c_str());
+    client.publish(mqtt_topic, str(sensorValue));
 
     // { "moisture": 1023, "voltage": 2.45 }
-    // { "moisture": 985, "voltage": 2.31 }
-    // { "moisture": 1100, "voltage": 2.62 }
     // { "moisture": 1100}
+    // "1100"
 
     Serial.print("Published: ");
     Serial.println(payload);

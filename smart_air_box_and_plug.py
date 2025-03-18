@@ -1,146 +1,167 @@
-"""
-This file contains the logic to handle the smart air box and smart plug such
-as the logic for the if else statement to turn ON/OFF the smart plug based
-on the parameters accordingly.
-
-This file also contains the code to collect the data from the various sensors 
-via the MQTT topic and passes it to the main.py file.
-"""
-
-import requests
-import threading
-import queue
-import time
-import paho.mqtt.client as mqtt
+import aiohttp
+import asyncio
 import json
+import paho.mqtt.client as mqtt
 
-# Global queue to store data
-data_queue = queue.Queue()
+# Global asyncio queue to store data to pass to main.py
+data_queue = asyncio.Queue()
 
 """ Athom PG04V2-Uk16A Tasmota Smart Plug """
-TASMOTA_IP = "http://192.168.202.167"  # Smart plug ip address (must be connected to the same network as raspberry pi)
+TASMOTA_IP = "http://192.168.202.167"
 
 # Tasmota API endpoints
 POWER_ON_URL = f"{TASMOTA_IP}/cm?cmnd=Power%20On"
 POWER_OFF_URL = f"{TASMOTA_IP}/cm?cmnd=Power%20Off"
 POWER_TOGGLE_URL = f"{TASMOTA_IP}/cm?cmnd=Power%20Toggle"
 
-def toggle_power():
+async def send_request(url):
+    """ Send an asynchronous HTTP GET request """
+    async with aiohttp.ClientSession() as session:
+        try:
+            async with session.get(url) as response:
+                if response.status == 200:
+                    print(f"SUCCESS: Request to {url} successful.")
+                else:
+                    print(f"FAILED: Request to {url} failed: {await response.text()}")
+        except Exception as e:
+            print("Error:", e)
+
+async def toggle_power():
     """ Toggle the ON/OFF the smart plug """
-    try:
-        response = requests.get(POWER_TOGGLE_URL)
-        if response.status_code == 200:
-            print("SUCCESS: Successfully toggled smart plug.")
-        else:
-            print("FAILED: Failed to toggle smart plug:", response.text)
-    except Exception as e:
-        print("Error:", e)
+    await send_request(POWER_TOGGLE_URL)
 
-def turn_on():
+async def turn_on():
     """ Turn the smart plug ON """
-    try:
-        response = requests.get(POWER_ON_URL)
-        if response.status_code == 200:
-            print("SUCCESS: Smart plug successfully turned ON.")
-        else:
-            print("FAILED: Smart plug failed to turn ON:", response.text)
-    except Exception as e:
-        print("Error:", e)
+    await send_request(POWER_ON_URL)
 
-def turn_off():
+async def turn_off():
     """ Turn the smart plug OFF """
-    try:
-        response = requests.get(POWER_OFF_URL)
-        if response.status_code == 200:
-            print("SUCCESS: Smart plug successfully turned OFF.")
-        else:
-            print("FAILED: Smart plug failed to turn OFF:", response.text)
-    except Exception as e:
-        print("Error:", e)
+    await send_request(POWER_OFF_URL)
 
 """ Smart Air Box """
 # Define the MQTT broker and topic
-MQTT_BROKER = "192.168.202.73"  # Raspberry pi's ip address
+MQTT_BROKER = "192.168.202.73"  # Raspberry pi ip address
 MQTT_PORT = 1883
-MQTT_TOPIC = "zigbee2mqtt/0xa4c138a5d0b49a7c"  # Topic to subscribe to
+# Remember to change accordingly for the respective sensor code file also
+MQTT_TOPIC_SMART_AIR_BOX = "zigbee2mqtt/smart_air_box"
+MQTT_TOPIC_MOTION_SENSOR = "zigbee2mqtt/motion_sensor"
+MQTT_TOPIC_MOISTURE_SENSOR = "zigbee2mqtt/moisture_sensor"
+MQTT_TOPIC_GAS_SENSOR = "zigbee2mqtt/gas_sensor"
 
-SMART_AIR_BOX_DATA = {}  # Global variable that stores json data from on_message() function so that it can be used in telegram function
-MOTION_SENSOR_DATA = ""  # # Global variable that stores string data from motion sensor
+# Global variable to store received data from respective sensors via MQTT topic
+SMART_AIR_BOX_DATA = {}  
+MOTION_SENSOR_DATA = ""
+MOISTURE_SENSOR_DATA = ""
+GAS_SENSOR_DATA = ""
+FINAL_DATA = {"SMART_AIR_BOX_DATA_HUMIDITY": "", "MOTION_SENSOR_DATA": "", "MOISTURE_SENSOR_DATA": "", "GAS_SENSOR_DATA": ""}  # This variable is to store all the other data combined
 
-# This function will be called when a message is received
 def on_message(client, userdata, msg):
-    global SMART_AIR_BOX_DATA
-    global MOTION_SENSOR_DATA
+    """ MQTT callback function for received messages """
+    global SMART_AIR_BOX_DATA, MOTION_SENSOR_DATA, MOISTURE_SENSOR_DATA, GAS_SENSOR_DATA, FINAL_DATA
 
-    # Print the topic and the payload (JSON data)
-    print(f"Message received on topic {msg.topic}: {msg.payload}")
-    
-    payload  = msg.payload.decode("utf-8")
+    payload = msg.payload.decode("utf-8")
+    print(f"Message received on topic {msg.topic}: {payload}")
 
-    # JSON data (smart airbox and plug stuff)
-    try:
-        # Parse the JSON data from the message payload
-            SMART_AIR_BOX_DATA = json.loads(msg.payload)  # Update global variable
-            print("Parsed JSON Data:", SMART_AIR_BOX_DATA)  # {"co2":368,"formaldehyd":2,"humidity":62,"linkquality":136,"temperature":29.7,"voc":1}
+    if msg.topic == MQTT_TOPIC_SMART_AIR_BOX:
+        # JSON/dictionary data
+        if len(SMART_AIR_BOX_DATA) == 0:
+            # if empty wait for data to come in
+            pass
 
-            # TODO: Move this if else logic to below as it needs to include the other sensor data as well not only humidity
+        else:
+            # not empty
+            SMART_AIR_BOX_DATA = json.loads(payload)
+            print("Parsed JSON Data:", SMART_AIR_BOX_DATA)
 
-            # Logic to determine when to toggle Smart Plug ON/OFF
-            humidity = SMART_AIR_BOX_DATA["humidity"]
+            humidity = SMART_AIR_BOX_DATA.get("humidity", 0)
 
-            # Eventually need to take data from smoke sensor as well and implement inside this if else logic not only use humidity
-
-            # If humidity > 55, turn ON Smart Plug
+            # Schedule plug control based on humidity
             if humidity > 55:
-                turn_on()
-            
-            # If humidity <= 55, turn OFF Smart Plug
+                asyncio.run_coroutine_threadsafe(turn_on(), loop)
+
             else:
-                turn_off()
+                asyncio.run_coroutine_threadsafe(turn_off(), loop)
 
-            # Send JSON data (return SMART_AIR_BOX_DATA global variable) to main.py file
-            # Put the data into the queue to make it accessible by the main.py file
-            data_queue.put(SMART_AIR_BOX_DATA)
+            FINAL_DATA["SMART_AIR_BOX_DATA_HUMIDITY"] = str(humidity)
 
-    # If it is not JSON data (other sensor data)
-    except:
-        # Motion sensor (string data)
-        MOTION_SENSOR_DATA = payload.strip()  # Store motion sensor string data to global variable
-        print("Received Motion Sensor Data:", MOTION_SENSOR_DATA)
-
-        # Send string data (return MOTION_SENSOR_DATA global variable) to main.py file
-        # Put the data into the queue to make it accessible by the main.py file
-        data_queue.put(MOTION_SENSOR_DATA)
-
-        # TODO: Water sensor, gas sensor. Do the same thing as motion sensor as they will all be string data then place it in the data_queue to be sent to the main.py file.
+            # asyncio.run_coroutine_threadsafe(data_queue.put(SMART_AIR_BOX_DATA), loop)
         
-def start_mqtt_client():
-    """ Starts the MQTT client in a separate thread """
-    # Create an MQTT client instance
+
+    elif msg.topic == MQTT_TOPIC_MOTION_SENSOR:
+        # String data (refer to sensor code file client.publish)
+        if MOTION_SENSOR_DATA == "":
+            # if empty wait for data to come in
+            pass
+
+        else:
+            # not empty
+            MOTION_SENSOR_DATA = payload.strip()
+            print("Received Motion Sensor Data:", MOTION_SENSOR_DATA)
+
+            FINAL_DATA["MOTION_SENSOR_DATA"] = str(MOTION_SENSOR_DATA)
+
+            # asyncio.run_coroutine_threadsafe(data_queue.put(MOTION_SENSOR_DATA), loop)
+
+
+    elif msg.topic == MQTT_TOPIC_MOISTURE_SENSOR:
+        # String data (refer to sensor code file client.publish)
+        if MOISTURE_SENSOR_DATA == "":
+            # if empty wait for data to come in
+            pass
+
+        else:
+            # not empty
+            MOISTURE_SENSOR_DATA = payload.strip()
+            print("Received Moisture Sensor Data:", MOISTURE_SENSOR_DATA)
+
+            FINAL_DATA["MOISTURE_SENSOR_DATA"] = str(MOISTURE_SENSOR_DATA)
+
+            # asyncio.run_coroutine_threadsafe(data_queue.put(MOISTURE_SENSOR_DATA), loop)
+
+
+    elif msg.topic == MQTT_TOPIC_GAS_SENSOR:
+        # TODO: Decide whether data received is string or JSON/dictionary
+        # String data OR JSON/dictionary?
+        if GAS_SENSOR_DATA == "":
+            # if empty wait for data to come in
+            pass
+
+        else:
+            # not empty
+            GAS_SENSOR_DATA = payload.strip()
+            print("Received Gas Sensor Data:", GAS_SENSOR_DATA)
+
+            FINAL_DATA["GAS_SENSOR_DATA"] = str(GAS_SENSOR_DATA)
+
+            # asyncio.run_coroutine_threadsafe(data_queue.put(GAS_SENSOR_DATA), loop)
+    
+
+    # Combine all data into a single variable to send to main.py if all data is not empty
+    for value in FINAL_DATA.values():
+        if value != "":
+            asyncio.run_coroutine_threadsafe(data_queue.put(FINAL_DATA), loop)
+    
+    # TODO: Implement if else logic for on/off fan etc. functionality using all sensor data
+
+async def start_mqtt_client():
+    """ Start the MQTT client asynchronously """
     client = mqtt.Client()
-    # Set the callback function for message reception
     client.on_message = on_message
-    # Connect to the MQTT broker
     client.connect(MQTT_BROKER, MQTT_PORT, 60)
-    # Subscribe to the topic
-    client.subscribe(MQTT_TOPIC)
-    # Loop forever to keep receiving messages
-    client.loop_forever()
+    # Subscribe to the various topics accordingly
+    client.subscribe(MQTT_TOPIC_SMART_AIR_BOX)
+    client.subscribe(MQTT_TOPIC_MOTION_SENSOR)
+    client.subscribe(MQTT_TOPIC_MOISTURE_SENSOR)
+    client.subscribe(MQTT_TOPIC_GAS_SENSOR)
+    client.loop_start()
 
-# Threading to handle concurrency for Smart Air Box and Smart Plug 
-# to allow the code to know when to call the turn ON/OFF Smart Plug code 
-# accordingly when the criteria match within the Smart Air Box code
+async def main():
+    """ Main event loop """
+    await start_mqtt_client()
 
-# The following code below is used to run the smart_air_box_and_plug.py threading code
-# however we no longer need it as we are running it in main.py which is why we make the
-# if __name__ == "__main__" so that it will only be ran if this file is executed directly
+    while True:
+        await asyncio.sleep(1)  # Prevents high CPU usage
 
 if __name__ == "__main__":
-    # Start MQTT in a new thread
-    mqtt_thread = threading.Thread(target=start_mqtt_client, daemon=True)
-    mqtt_thread.start()
-
-    # Keep the script running only when executed directly
-    # Need this for the threading to work
-    while True:
-        time.sleep(1)  # Add a delay to prevent high CPU usage
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(main())

@@ -4,7 +4,6 @@ from telegram.ext import Application, CommandHandler, MessageHandler, filters, C
 import time
 import asyncio
 import json
-import threading
 
 # Replace with your bot's API token and user ID
 BOT_TOKEN = '8021420031:AAHJYXHQ40stDTJxiyG1pcArayDDp4OZQEI'

@@ -20,8 +20,8 @@ const char* topic_value = "home/smoke_detector/value";
 const char* topic_threshold = "home/smoke_detector/threshold";
 
 // Pin configuration based on your wiring
-const int mqAnalogPin = 26; // G26 connected to AO (Analog Output)
-const int mqDigitalPin = 36; // G36 connected to DO (Digital Output)
+const int mqAnalogPin = 36; // G36 connected to AO (Analog Output)
+const int mqDigitalPin = 26; // G26 connected to DO (Digital Output)
 const int buzzerPin = 0; // Optional buzzer pin - set to unused pin
 
 // Smoke detection parameters

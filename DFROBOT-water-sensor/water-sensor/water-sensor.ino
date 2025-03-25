@@ -7,9 +7,9 @@ const char* ssid = "help";          // Replace with your Wi-Fi SSID
 const char* password = "12678935";  // Replace with your Wi-Fi password
 
 // MQTT broker settings
-const char* mqtt_server = "192.168.202.73";  // Replace with your MQTT broker's address
+const char* mqtt_server = "192.168.218.73";  // Replace with your MQTT broker's address
 const int mqtt_port = 1883;                 // Default MQTT port
-const char* mqtt_topic = "zigbee2mqtt/0xa4c138a5d0b49a7c";  // Topic for motion sensor status
+const char* mqtt_topic = "zigbee2mqtt/moisture_sensor";  // Topic for motion sensor status
 
 // Moisture sensor pin
 #define MOISTURE_SENSOR_PIN 26  // Analog pin where the sensor is connected
@@ -79,13 +79,8 @@ void loop() {
     M5.Lcd.print("V");
 
     // Publish to MQTT
-    // String payload = "{ \"moisture\": " + String(sensorValue) + ", \"voltage\": " + String(voltage, 2) + " }";
-    // client.publish(mqtt_topic, payload.c_str());
-    client.publish(mqtt_topic, str(sensorValue));
-
-    // { "moisture": 1023, "voltage": 2.45 }
-    // { "moisture": 1100}
-    // "1100"
+    String payload = "{ \"moisture\": " + String(sensorValue) + ", \"voltage\": " + String(voltage, 2) + " }";
+    client.publish(mqtt_topic, payload.c_str());
 
     Serial.print("Published: ");
     Serial.println(payload);

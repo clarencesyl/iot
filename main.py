@@ -1,14 +1,20 @@
-from tele_bot import routine_check
 from tele_bot import start_bot, send_telegram_message
+from data_processing import KitchenSafetyMonitor
 from smart_air_box_and_plug import data_queue, run_mqtt, loop
 import asyncio
-import time
 
 async def retrieve_data():
     """ Process data from the queue asynchronously """
+
+    monitor = KitchenSafetyMonitor()  # Initialize the safety monitor
+
     while True:
         data = await data_queue.get()  # Retrieve latest data from the queue
-        print("MAIN.PY FINAL DATA:", data)
+        print("Received Data:", data)
+
+        # Process the data with KitchenSafetyMonitor
+        await monitor.process_data(data)
+
         await asyncio.sleep(1)
 
 async def main():

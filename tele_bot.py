@@ -21,52 +21,9 @@ async def send_telegram_message(message, user_id):
         print(f"Error sending message: {e}")
 
 
-async def read_temperature(json_data):
-    data = json.loads(json_data)
-    temperature = data["temperature"]
-    return temperature
-
-
-async def read_humidity(json_data):
-    data = json.loads(json_data)
-    humidity = data["humidity"]
-    return humidity
-
-
-async def read_gas(json_data):
-    data = json.loads(json_data)
-    return 0
-
-
-async def read_moisture(json_data):
-    data = json.loads(json_data)
-    return 0
-
-
-async def routine_check(temp_json, humidity_json, gas_json, moisture_json):
-    temp = await read_temperature(temp_json)
-    humidity = await read_humidity(humidity_json)
-    gas = await read_gas(gas_json)
-    moisture = await read_moisture(moisture_json)
-
-    final_message = ""
-    temp_result = ""
-    humidity_result = ""
-    gas_result = ""
-    moisture_result = ""
-
-    temp_result = "Temperature: " + str(temp)
-
-    humidity_result = "Humidity: " + str(humidity)
-
-    gas_result = "Gas: " + str(gas)
-
-    moisture_result = "Moisture: " + str(moisture)
-
-    result_array = [temp_result, humidity_result, gas_result, moisture_result]
-    final_message = "\n".join(result_array)
-
-    return final_message
+async def status_update(data):
+    message = f"Status Update: {data}"
+    await send_telegram_message(message, USER_ID)
 
 
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):

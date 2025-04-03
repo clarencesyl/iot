@@ -104,7 +104,7 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
 
         FINAL_DATA["GAS_SENSOR_DATA"] = str(ast.literal_eval(GAS_SENSOR_DATA).get("analog_value", 0))
     
-    print("FINAL DATA:", FINAL_DATA)
+    # print("FINAL DATA:", FINAL_DATA)
 
     # Add data to queue to be sent to main.py
     # Add data to queue safely

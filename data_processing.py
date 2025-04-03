@@ -1,5 +1,6 @@
 import time
 from tele_bot import status_update
+from smart_air_box_and_plug import turn_on_fan, turn_off_fan, toggle_power_fan
 
 class KitchenSafetyMonitor:
     def __init__(self):
@@ -83,9 +84,11 @@ class KitchenSafetyMonitor:
             elif current_time - self.humidity_start >= 10800:  # 3 hours in seconds
                 humidity_time = current_time - self.humidity_start
                 print("Elevated unwarranted humidity detected!")
+                await turn_on_fan()
                 await status_update(f"⚠️ HIGH HUMIDITY DETECTED! High humidity with low temperature for {humidity_time} seconds")
                 self.humidity_start = None
         else:
+            await turn_off_fan()
             self.humidity_start = None
 
     async def check_fire(self, data):

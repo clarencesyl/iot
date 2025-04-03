@@ -29,15 +29,15 @@ async def send_request(url):
         except Exception as e:
             print("Error:", e)
 
-async def toggle_power():
+async def toggle_power_fan():
     """ Toggle the ON/OFF the smart plug """
     await send_request(POWER_TOGGLE_URL)
 
-async def turn_on():
+async def turn_on_fan():
     """ Turn the smart plug ON """
     await send_request(POWER_ON_URL)
 
-async def turn_off():
+async def turn_off_fan():
     """ Turn the smart plug OFF """
     await send_request(POWER_OFF_URL)
 
@@ -72,13 +72,6 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
 
         FINAL_DATA["SMART_AIR_BOX_DATA_HUMIDITY"] = str(SMART_AIR_BOX_DATA.get("humidity", 0))
         FINAL_DATA["SMART_AIR_BOX_DATA_TEMPERATURE"] = str(SMART_AIR_BOX_DATA.get("temperature", 0))
-
-        # Schedule plug control based on humidity
-        # if SMART_AIR_BOX_DATA.get("humidity", 0) > 60:
-        #     asyncio.run(turn_on())
-
-        # else:
-        #     asyncio.run(turn_off())
 
     if msg.topic == MQTT_TOPIC_MOTION_SENSOR:
         # String data (refer to sensor code file client.publish)

@@ -8,11 +8,11 @@ const char* password = "12678935";  // Replace with your Wi-Fi password
 
 // MQTT broker settings
 const char* mqtt_server = "192.168.218.73";  // Replace with your MQTT broker's address
-const int mqtt_port = 1883;                 // Default MQTT port
-const char* mqtt_topic = "zigbee2mqtt/moisture_sensor";  // Topic for motion sensor status
+const int mqtt_port = 1883;                  // Default MQTT port
+const char* mqtt_topic = "zigbee2mqtt/moisture_sensor";  // Topic for moisture sensor status
 
-// Moisture sensor pin
-#define MOISTURE_SENSOR_PIN 26  // Analog pin where the sensor is connected
+// Moisture sensor pin (Use GPIO33 instead of GPIO26)
+#define MOISTURE_SENSOR_PIN 33  
 
 WiFiClient espClient;
 PubSubClient client(espClient);
@@ -51,9 +51,12 @@ void setup() {
     Serial.begin(115200);
 
     connectWiFi();
-    
     client.setServer(mqtt_server, mqtt_port);
     connectMQTT();
+
+    // Set up ADC properly
+    analogReadResolution(12); // ESP32 ADC has 12-bit resolution (0 - 4095)
+    analogSetPinAttenuation(MOISTURE_SENSOR_PIN, ADC_11db); // Supports up to 3.3V
 }
 
 void loop() {
@@ -63,9 +66,16 @@ void loop() {
     client.loop();
 
     int sensorValue = analogRead(MOISTURE_SENSOR_PIN);
-    float voltage = sensorValue * (3.3 / 4095.0); 
+    float voltage = sensorValue * (3.3 / 4095.0);
 
-    // Display readings on screen
+    // Debugging output
+    Serial.print("Raw ADC Value: ");
+    Serial.print(sensorValue);
+    Serial.print(" | Voltage: ");
+    Serial.print(voltage, 2);
+    Serial.println("V");
+
+    // Display readings on M5StickC Plus screen
     M5.Lcd.fillScreen(BLACK);
     M5.Lcd.setCursor(10, 20);
     M5.Lcd.print("Moisture Level:");
@@ -78,7 +88,7 @@ void loop() {
     M5.Lcd.print(voltage, 2);
     M5.Lcd.print("V");
 
-    // Publish to MQTT
+    // Publish data to MQTT
     String payload = "{ \"moisture\": " + String(sensorValue) + ", \"voltage\": " + String(voltage, 2) + " }";
     client.publish(mqtt_topic, payload.c_str());
 

@@ -1,23 +1,20 @@
 from tele_bot import routine_check
 from tele_bot import start_bot, send_telegram_message
-from smart_air_box_and_plug import data_queue, run_mqtt
+from smart_air_box_and_plug import data_queue, run_mqtt, loop
 import asyncio
 import time
 
 async def retrieve_data():
     """ Process data from the queue asynchronously """
     while True:
-        print("test")
         data = await data_queue.get()  # Retrieve latest data from the queue
-        print("Received Data:", data)
-        
-        # Add any additional processing logic here
-        # {"SMART_AIR_BOX_DATA_HUMIDITY": "100", "MOTION_SENSOR_DATA": "Motion Detected", "MOISTURE_SENSOR_DATA": "100", "GAS_SENSOR_DATA": ""}
-
+        print("MAIN.PY FINAL DATA:", data)
         await asyncio.sleep(1)
 
 async def main():
     """ Main function to run the MQTT client and process the queue and telegram bot """
+    global loop
+    asyncio.set_event_loop(loop)
 
     # Start MQTT client
     mqtt_task = asyncio.create_task(run_mqtt())
@@ -30,4 +27,5 @@ async def main():
     await asyncio.gather(mqtt_task, bot_task, simple_task)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    # asyncio.run(main())
+    loop.run_until_complete(main())

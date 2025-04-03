@@ -1,38 +1,36 @@
 #include <M5StickCPlus.h>
 #include <WiFi.h>
-#include <PubSubClient.h>  // MQTT Client library
+#include <PubSubClient.h>  
+#include <ArduinoJson.h>   
 
 // WiFi credentials
-const char* ssid = "help";         // Replace with your WiFi SSID
-const char* password = "12678935"; // Replace with your WiFi password
+const char* ssid = "help";         
+const char* password = "12678935"; 
 
 // MQTT Broker settings
-const char* mqtt_server = "192.168.202.73"; // Replace with your MQTT broker address
-const int mqtt_port = 1883;                   // Standard MQTT port
-const char* mqtt_user = ""; // Replace with your MQTT username or leave empty
-const char* mqtt_password = ""; // Replace with your MQTT password or leave empty
-const char* client_id = "SmokeSensorM5";      // MQTT client ID (should be unique)
+const char* mqtt_server = "192.168.218.73"; 
+const int mqtt_port = 1883;                 
+const char* mqtt_user = "";                 
+const char* mqtt_password = "";             
+const char* client_id = "SmokeSensorM5";    
 
-// MQTT Topics
-const char* topic_status = "home/smoke_detector/status";
-const char* topic_alert = "home/smoke_detector/alert";
-const char* topic_value = "home/smoke_detector/value";
-const char* topic_threshold = "home/smoke_detector/threshold";
+// MQTT Topic
+const char* mqtt_topic = "zigbee2mqtt/gas_sensor";
 
-// Pin configuration based on your wiring
-const int mqAnalogPin = 36; // G36 connected to AO (Analog Output)
-const int mqDigitalPin = 26; // G26 connected to DO (Digital Output)
-const int buzzerPin = 0; // Optional buzzer pin - set to unused pin
+
+const int mqAnalogPin = 36; // Analog Output
+const int mqDigitalPin = 26; // Digital Output
+const int buzzerPin = 0; // Just in case we want buzzer
 
 // Smoke detection parameters
 int analogThreshold = 2000; // Initial threshold (will be calibrated)
-int sensorValue = 0; // Current analog sensor reading
-int baselineValue = 0; // Baseline value for calibration
-bool digitalValue = false; // Digital sensor reading
-bool digitalEnabled = true; // Whether to use digital readings for detection (ON by default)
-bool isCalibrationMode = true; // Start in calibration mode
-bool alarmActive = false; // Track if alarm is currently active
-const int readingInterval = 500; // Sensor reading interval in ms
+int sensorValue = 0; 
+int baselineValue = 0; 
+bool digitalValue = false; 
+bool digitalEnabled = true; 
+bool isCalibrationMode = true; 
+bool alarmActive = false; 
+const int readingInterval = 500; 
 
 // Display colors
 const uint16_t COLOR_BACKGROUND = BLACK;
@@ -48,7 +46,7 @@ unsigned long lastMqttPublishTime = 0;
 unsigned long mqttPublishInterval = 5000; // Publish sensor data every 5 seconds
 unsigned long uptime = 0;
 unsigned long lastWifiCheckTime = 0;
-unsigned long wifiCheckInterval = 30000; // Check WiFi connection every 30 seconds
+unsigned long wifiCheckInterval = 30000; 
 
 // Sensor data history
 const int historySize = 10;
@@ -59,7 +57,7 @@ int historyIndex = 0;
 WiFiClient espClient;
 PubSubClient mqttClient(espClient);
 
-// Function prototypes
+
 void updateDisplay();
 void checkSmoke();
 void triggerAlarm();
@@ -69,14 +67,12 @@ void flashMessage(const char* line1, const char* line2, uint16_t bgColor, uint16
 void potentiometerAdjustmentMode();
 void setupWifi();
 void reconnectMqtt();
-void publishSensorData();
-void publishAlert(bool isAlert);
+void publishSensorData(bool alert = false);
 void mqttCallback(char* topic, byte* payload, unsigned int length);
 
 void setup() {
-  // Initialize M5StickC Plus
   M5.begin();
-  M5.Axp.ScreenBreath(15); // Maximum brightness for M5StickC Plus 1.1
+  M5.Axp.ScreenBreath(15); // Maximum brightness 
   M5.Lcd.setRotation(3); // Landscape mode
   M5.Lcd.fillScreen(COLOR_BACKGROUND);
   M5.Lcd.setCursor(0, 10);
@@ -85,22 +81,17 @@ void setup() {
   M5.Lcd.println("Smoke Detector");
   M5.Lcd.println("Initializing...");
   
-  // Initialize serial for debugging
+
   Serial.begin(115200);
   Serial.println("M5StickC Plus Smoke Detector Starting...");
-  
-  // Initialize pins
   pinMode(mqAnalogPin, INPUT);
   pinMode(mqDigitalPin, INPUT);
   pinMode(buzzerPin, OUTPUT);
   digitalWrite(buzzerPin, LOW);
-  
-  // Quick beep to test buzzer if connected
   digitalWrite(buzzerPin, HIGH);
   delay(200);
   digitalWrite(buzzerPin, LOW);
   
-  // Extra brightness control attempt for M5StickC Plus 1.1
   M5.Axp.SetLDO2(true); // Enable LDO2 for model 1.1
   
   // Initialize history array
@@ -148,10 +139,7 @@ void setup() {
   
   // Publish initial status
   if (mqttClient.connected()) {
-    mqttClient.publish(topic_status, "online", true);
-    char msg[50];
-    snprintf(msg, 50, "%d", analogThreshold);
-    mqttClient.publish(topic_threshold, msg, true);
+    publishSensorData();
   }
 }
 
@@ -241,7 +229,7 @@ void loop() {
     
     // Publish alarm clear via MQTT
     if (mqttClient.connected()) {
-      publishAlert(false);
+      publishSensorData(false); // Update MQTT with alarm cleared
     }
     
     // Exit calibration mode if still in it
@@ -305,6 +293,11 @@ void loop() {
     M5.Lcd.println("Smoke Detector");
     M5.Lcd.drawLine(0, 20, M5.Lcd.width(), 20, COLOR_TEXT);
     updateDisplay();
+    
+    // Publish updated state
+    if (mqttClient.connected()) {
+      publishSensorData();
+    }
   }
   
   // Button B: Test mode (simulates smoke detection) or recalibrate
@@ -324,9 +317,7 @@ void loop() {
       
       // Publish new threshold via MQTT
       if (mqttClient.connected()) {
-        char msg[50];
-        snprintf(msg, 50, "%d", analogThreshold);
-        mqttClient.publish(topic_threshold, msg, true);
+        publishSensorData();
       }
     }
     // Otherwise do a test alarm
@@ -341,7 +332,18 @@ void loop() {
       
       // Publish test alert via MQTT
       if (mqttClient.connected()) {
-        mqttClient.publish(topic_alert, "test_alarm", false);
+        // Create a special test alert JSON
+        StaticJsonDocument<256> doc;
+        doc["state"] = "test_alarm";
+        doc["analog_value"] = sensorValue;
+        doc["threshold"] = analogThreshold;
+        // doc["digital_triggered"] = (digitalValue == LOW);
+        // doc["digital_enabled"] = digitalEnabled;
+        // doc["uptime"] = uptime;
+        
+        char buffer[256];
+        serializeJson(doc, buffer);
+        mqttClient.publish(mqtt_topic, buffer);
       }
       
       // Visual feedback
@@ -486,7 +488,7 @@ void checkSmoke() {
       
       // Publish alert via MQTT
       if (mqttClient.connected()) {
-        publishAlert(true);
+        publishSensorData(true); // Set alert flag to true
       }
     }
   } else {
@@ -497,7 +499,7 @@ void checkSmoke() {
       
       // Publish alert clear via MQTT
       if (mqttClient.connected()) {
-        publishAlert(false);
+        publishSensorData(false); // Update with alert cleared
       }
     }
   }
@@ -811,28 +813,39 @@ void reconnectMqtt() {
     Serial.print("Attempting MQTT connection...");
     
     // Create a last will message to notify when device goes offline
-    String lastWillPayload = "{\"status\":\"offline\",\"device\":\"smoke_detector\"}";
+    StaticJsonDocument<128> willDoc;
+    willDoc["state"] = "offline";
+    willDoc["device"] = "gas_sensor";
+    
+    char willPayload[128];
+    serializeJson(willDoc, willPayload);
     
     // Attempt to connect with last will message
     bool success = false;
     if (strlen(mqtt_user) > 0) {
       success = mqttClient.connect(client_id, mqtt_user, mqtt_password, 
-                                  topic_status, 1, true, lastWillPayload.c_str());
+                                  mqtt_topic, 1, true, willPayload);
     } else {
-      success = mqttClient.connect(client_id, topic_status, 1, true, lastWillPayload.c_str());
+      success = mqttClient.connect(client_id, mqtt_topic, 1, true, willPayload);
     }
     
     if (success) {
       Serial.println("connected");
       
-      // Once connected, publish an announcement...
-      String statusMsg = "{\"status\":\"online\",\"device\":\"smoke_detector\",\"ip\":\"";
-      statusMsg += WiFi.localIP().toString();
-      statusMsg += "\"}";
-      mqttClient.publish(topic_status, statusMsg.c_str(), true);
+      // Once connected, publish an announcement
+      StaticJsonDocument<256> doc;
+      doc["state"] = "online";
+      doc["device"] = "gas_sensor";
+      doc["ip"] = WiFi.localIP().toString();
+      doc["uptime"] = uptime;
+      doc["threshold"] = analogThreshold;
       
-      // ... and subscribe to command topics
-      mqttClient.subscribe("home/smoke_detector/command");
+      char buffer[256];
+      serializeJson(doc, buffer);
+      mqttClient.publish(mqtt_topic, buffer, true);
+      
+      // Subscribe to command topic
+      mqttClient.subscribe("zigbee2mqtt/gas_sensor/set");
     } else {
       Serial.print("failed, rc=");
       Serial.print(mqttClient.state());
@@ -844,40 +857,37 @@ void reconnectMqtt() {
 }
 
 // Publish sensor data via MQTT
-void publishSensorData() {
-  // Publish analog value
-  char msg[50];
-  snprintf(msg, 50, "%d", sensorValue);
-  mqttClient.publish(topic_value, msg);
+void publishSensorData(bool alert) {
+  // Create JSON document
+  StaticJsonDocument<256> doc;
   
-  // Publish status message with more details in JSON format
-  char statusMsg[256];
-  snprintf(statusMsg, 256, 
-           "{\"analog\":%d,\"threshold\":%d,\"digital\":%s,\"digitalEnabled\":%s,\"uptime\":%lu}",
-           sensorValue, 
-           analogThreshold,
-           digitalValue == LOW ? "true" : "false",
-           digitalEnabled ? "true" : "false",
-           uptime);
+  // Basic state information
+  bool analogAlert = (sensorValue > analogThreshold);
+  bool digitalAlert = digitalEnabled && (digitalValue == LOW);
   
-  mqttClient.publish(topic_status, statusMsg);
-}
-
-// Publish alert status
-void publishAlert(bool isAlert) {
-  if (isAlert) {
-    char alertMsg[256];
-    snprintf(alertMsg, 256, 
-             "{\"alert\":true,\"value\":%d,\"threshold\":%d,\"digital\":%s,\"time\":%lu}",
-             sensorValue, 
-             analogThreshold,
-             digitalValue == LOW ? "true" : "false",
-             millis());
-    
-    mqttClient.publish(topic_alert, alertMsg);
+  // Determine overall state and alert status
+  if (alert || analogAlert || digitalAlert) {
+    doc["state"] = "alarm";
   } else {
-    mqttClient.publish(topic_alert, "clear");
+    doc["state"] = "clear";
   }
+  
+  // Add sensor values
+  doc["analog_value"] = sensorValue;
+  doc["threshold"] = analogThreshold;
+  // doc["digital_triggered"] = (digitalValue == LOW);
+  // doc["digital_enabled"] = digitalEnabled;
+  
+  // Add device information
+  // doc["uptime"] = uptime;
+  // doc["battery"] = M5.Axp.GetBatVoltage();
+  // doc["ip"] = WiFi.localIP().toString();
+  //doc["device"] = "gas_sensor";
+  
+  // Convert to JSON string and publish
+  char buffer[256];
+  serializeJson(doc, buffer);
+  mqttClient.publish(mqtt_topic, buffer);
 }
 
 // MQTT message callback
@@ -895,9 +905,20 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   
   Serial.println(message);
   
+  // Parse JSON
+  StaticJsonDocument<256> doc;
+  DeserializationError error = deserializeJson(doc, message);
+  
+  if (error) {
+    Serial.print("deserializeJson() failed: ");
+    Serial.println(error.c_str());
+    return;
+  }
+  
   // Handle commands
-  if (String(topic) == "home/smoke_detector/command") {
-    if (String(message) == "reset") {
+  if (String(topic) == "zigbee2mqtt/gas_sensor/set") {
+    // Process reset command
+    if (doc.containsKey("reset") && doc["reset"].as<bool>()) {
       // Reset alarm
       digitalWrite(buzzerPin, LOW);
       alarmActive = false;
@@ -919,9 +940,11 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       updateDisplay();
       
       // Publish alert clear
-      publishAlert(false);
+      publishSensorData(false);
     }
-    else if (String(message) == "calibrate") {
+    
+    // Process calibrate command
+    if (doc.containsKey("calibrate") && doc["calibrate"].as<bool>()) {
       // Recalibrate sensor
       calibrateSensor();
       
@@ -936,17 +959,27 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       M5.Lcd.drawLine(0, 20, M5.Lcd.width(), 20, COLOR_TEXT);
       updateDisplay();
       
-      // Publish new threshold
-      char msg[50];
-      snprintf(msg, 50, "%d", analogThreshold);
-      mqttClient.publish(topic_threshold, msg, true);
+      // Publish updated settings
+      publishSensorData(false);
     }
-    else if (String(message) == "test") {
+    
+    // Process test command
+    if (doc.containsKey("test") && doc["test"].as<bool>()) {
       // Trigger test alarm
       flashMessage("REMOTE", "TEST", COLOR_WARNING, BLACK, 3);
       
-      // Publish test alert
-      mqttClient.publish(topic_alert, "test_alarm", false);
+      // Create a special test alert JSON
+      StaticJsonDocument<256> testDoc;
+      testDoc["state"] = "test_alarm";
+      testDoc["value"] = sensorValue;
+      testDoc["threshold"] = analogThreshold;
+      // testDoc["digital_triggered"] = (digitalValue == LOW);
+      // testDoc["digital_enabled"] = digitalEnabled;
+      // testDoc["uptime"] = uptime;
+      
+      char buffer[256];
+      serializeJson(testDoc, buffer);
+      mqttClient.publish(mqtt_topic, buffer);
       
       // Redraw screen
       M5.Lcd.fillScreen(COLOR_BACKGROUND);
@@ -956,10 +989,10 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       M5.Lcd.drawLine(0, 20, M5.Lcd.width(), 20, COLOR_TEXT);
       updateDisplay();
     }
-    else if (String(message).startsWith("threshold:")) {
-      // Set custom threshold
-      String thresholdValue = String(message).substring(10);
-      analogThreshold = thresholdValue.toInt();
+    
+    // Process threshold adjustment
+    if (doc.containsKey("threshold")) {
+      analogThreshold = doc["threshold"].as<int>();
       
       // Visual feedback
       M5.Lcd.fillScreen(BLUE);
@@ -977,18 +1010,15 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
       M5.Lcd.drawLine(0, 20, M5.Lcd.width(), 20, COLOR_TEXT);
       updateDisplay();
       
-      // Publish new threshold
-      char msg[50];
-      snprintf(msg, 50, "%d", analogThreshold);
-      mqttClient.publish(topic_threshold, msg, true);
+      // Publish updated settings
+      publishSensorData(false);
     }
-    else if (String(message) == "digital_on") {
-      digitalEnabled = true;
+    
+    // Process digital sensor enable/disable
+    if (doc.containsKey("digital_enabled")) {
+      digitalEnabled = doc["digital_enabled"].as<bool>();
       updateDisplay();
-    }
-    else if (String(message) == "digital_off") {
-      digitalEnabled = false;
-      updateDisplay();
+      publishSensorData(false);
     }
   }
 }

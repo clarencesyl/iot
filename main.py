@@ -1,6 +1,6 @@
 from tele_bot import start_bot, send_telegram_message
 from data_processing import KitchenSafetyMonitor
-from smart_air_box_and_plug import data_queue, run_mqtt, loop
+from smart_air_box_and_plug import data_queue, run_mqtt, loop, turn_off_fan, turn_on_fan, toggle_power_fan
 import asyncio
 
 async def retrieve_data():

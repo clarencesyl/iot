@@ -56,12 +56,11 @@ SMART_AIR_BOX_DATA = {}
 MOTION_SENSOR_DATA = ""
 MOISTURE_SENSOR_DATA = ""
 GAS_SENSOR_DATA = ""
-FINAL_DATA = {"SMART_AIR_BOX_DATA": "", "MOTION_SENSOR_DATA": "", "MOISTURE_SENSOR_DATA": "", "GAS_SENSOR_DATA": ""}  # This variable is to store all the other data combined
+FINAL_DATA = {"SMART_AIR_BOX_DATA_HUMIDITY": "", "SMART_AIR_BOX_DATA_TEMPERATURE": "", "MOTION_SENSOR_DATA": "", "MOISTURE_SENSOR_DATA": "", "GAS_SENSOR_DATA": ""}  # This variable is to store all the other data combined
 
 def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
     """ MQTT callback function for received messages """
     global SMART_AIR_BOX_DATA, MOTION_SENSOR_DATA, MOISTURE_SENSOR_DATA, GAS_SENSOR_DATA, FINAL_DATA, loop
-    extract_air_box_specific_data = {}
 
     payload = msg.payload.decode("utf-8")
     # if msg.topic == "zigbee2mqtt/gas_sensor":
@@ -71,8 +70,8 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
         SMART_AIR_BOX_DATA = json.loads(payload)
         # print("SMART AIR BOX DATA:", SMART_AIR_BOX_DATA)
 
-        extract_air_box_specific_data["humidity"] = str(SMART_AIR_BOX_DATA.get("humidity", 0))
-        extract_air_box_specific_data["temperature"] = str(SMART_AIR_BOX_DATA.get("temperature", 0))
+        FINAL_DATA["SMART_AIR_BOX_DATA_HUMIDITY"] = str(SMART_AIR_BOX_DATA.get("humidity", 0))
+        FINAL_DATA["SMART_AIR_BOX_DATA_TEMPERATURE"] = str(SMART_AIR_BOX_DATA.get("temperature", 0))
 
         # Schedule plug control based on humidity
         # if SMART_AIR_BOX_DATA.get("humidity", 0) > 60:
@@ -80,8 +79,6 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
 
         # else:
         #     asyncio.run(turn_off())
-
-        FINAL_DATA["SMART_AIR_BOX_DATA"] = extract_air_box_specific_data
 
     if msg.topic == MQTT_TOPIC_MOTION_SENSOR:
         # String data (refer to sensor code file client.publish)

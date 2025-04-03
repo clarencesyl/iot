@@ -10,9 +10,9 @@ const char* ssid = "help";          // Replace with your Wi-Fi SSID
 const char* password = "12678935";  // Replace with your Wi-Fi password
 
 // MQTT broker settings
-const char* mqtt_server = "192.168.202.73";  // Replace with your MQTT broker's address
+const char* mqtt_server = "192.168.218.73";  // Replace with your MQTT broker's address
 const int mqtt_port = 1883;                 // Default MQTT port
-const char* mqtt_topic = "zigbee2mqtt/0xa4c138a5d0b49a7c";  // Topic for motion sensor status
+const char* mqtt_topic = "zigbee2mqtt/motion_sensor";  // Topic for motion sensor status
 
 WiFiClient espClient;
 PubSubClient client(espClient);

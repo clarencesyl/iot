@@ -29,7 +29,7 @@ void setup() {
     client.setServer(mqtt_server, mqtt_port);
 
     // Initialize Serial2 for radar communication
-    Serial2.begin(115200, SERIAL_8N1, 36 , 25);  // RX on GPIO36 (S1), TX on GPIO25 (S2) for radar communication
+    Serial2.begin(115200, SERIAL_8N1, 36 , 25); 
     
     Serial.println("Radar Sensor Initialized...");
 }

@@ -1,5 +1,3 @@
----
-
 1. **Power on the Device**  
    Ensure the smoke detector is powered on and ready.
 
@@ -21,4 +19,3 @@
    Blow hard into the smoke sensor (iykyk).  
    → If the sensor detects it, the device will send `status: alarm` to the broker.
 
----

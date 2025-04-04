@@ -1,4 +1,4 @@
-
+---
 
 1. **Power on the Device**  
    Ensure the smoke detector is powered on and ready.
@@ -6,19 +6,12 @@
 2. **Connect to the Device Hotspot**  
    On your phone or computer, connect to the Wi-Fi hotspot broadcasted by the device.
 
----
-
-## Calibration Mode
-
 3. **Wait for Calibration (5 Seconds)**  
    Upon startup, the device enters *calibration mode* for 5 seconds. Allow it to complete this step without interruption.
 
 4. **Press the A Button (Front Button)**  
    Once calibration is complete, press the **A button** located below the screen.  
    → The screen will display the current **threshold** and **analog sensor value**.
-
----
-
 
 5. **Trigger Test Alarm with B Button (Side Button)**  
    Press the **B button** on the side of the device.  

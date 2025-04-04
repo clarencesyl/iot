@@ -1,14 +1,14 @@
+import time
+import json
+import asyncio
 import telegram
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import time
-import asyncio
-import json
 
 # Replace with your bot's API token and user ID
 BOT_TOKEN = '8021420031:AAHJYXHQ40stDTJxiyG1pcArayDDp4OZQEI'
 BOT_USERNAME = 'kitchen_safety_bot'
-USER_ID = 531028339
+USER_ID = 283035380
 json_data = '''{"co2":395,"formaldehyd":1,"humidity":60,"linkquality":255,"temperature":24.8,"voc":15}''' # Humidity will be int and Temperature will be float
 
 

@@ -93,7 +93,7 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
         # print("GAS SENSOR DATA:", GAS_SENSOR_DATA)
 
         FINAL_DATA["GAS_SENSOR_DATA"] = str(ast.literal_eval(GAS_SENSOR_DATA).get("analog_value", 0))
-    
+
     # print("FINAL DATA:", FINAL_DATA)
 
     # Add data to queue to be sent to main.py
@@ -102,7 +102,7 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
         asyncio.run_coroutine_threadsafe(data_queue.put(FINAL_DATA.copy()), loop)
     else:
         print("Event loop is not running yet!")
-    
+
 async def start_mqtt_client():
     """ Start the MQTT client asynchronously """
     client = mqtt.Client()

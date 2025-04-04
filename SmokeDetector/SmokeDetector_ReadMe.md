@@ -1,8 +1,6 @@
 1. **Power on the Device**  
-   Ensure the smoke detector is powered on and ready.
 
 2. **Connect to the Device Hotspot**  
-   On your phone or computer, connect to the Wi-Fi hotspot broadcasted by the device.
 
 3. **Wait for Calibration (5 Seconds)**  
    Upon startup, the device enters *calibration mode* for 5 seconds. Allow it to complete this step without interruption.

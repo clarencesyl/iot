@@ -7,7 +7,7 @@ const char* ssid = "help";          // Replace with your Wi-Fi SSID
 const char* password = "12678935";  // Replace with your Wi-Fi password
 
 // MQTT broker settings
-const char* mqtt_server = "192.168.218.73";  // Replace with your MQTT broker's address
+const char* mqtt_server = "192.168.159.73";  // Replace with your MQTT broker's address
 const int mqtt_port = 1883;                  // Default MQTT port
 const char* mqtt_topic = "zigbee2mqtt/moisture_sensor";  // Topic for moisture sensor status
 

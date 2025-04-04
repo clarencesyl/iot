@@ -10,7 +10,7 @@ loop = asyncio.new_event_loop()
 asyncio.set_event_loop(loop)
 
 """ Athom PG04V2-Uk16A Tasmota Smart Plug """
-TASMOTA_IP = "http://192.168.218.167" # connect to same hotspot as raspberry pi, when connect will show ip of tasmota so no need to find it
+TASMOTA_IP = "http://192.168.159.167" # connect to same hotspot as raspberry pi, when connect will show ip of tasmota so no need to find it
 
 # Tasmota API endpoints
 POWER_ON_URL = f"{TASMOTA_IP}/cm?cmnd=Power%20On"
@@ -43,7 +43,7 @@ async def turn_off_fan():
 
 """ Smart Air Box """
 # Define the MQTT broker and topic
-MQTT_BROKER = "192.168.218.73"  # Raspberry pi ip address REMEMBER TO CONNECT LAPTOP TO HOTSPOT
+MQTT_BROKER = "192.168.109.73"  # Raspberry pi ip address REMEMBER TO CONNECT LAPTOP TO HOTSPOT
 MQTT_PORT = 1883
 # Remember to change accordingly for the respective sensor code file also
 MQTT_TOPIC_SMART_AIR_BOX = "zigbee2mqtt/SmartAirBox"
@@ -56,7 +56,7 @@ SMART_AIR_BOX_DATA = {}
 MOTION_SENSOR_DATA = ""
 MOISTURE_SENSOR_DATA = ""
 GAS_SENSOR_DATA = ""
-FINAL_DATA = {"SMART_AIR_BOX_DATA_HUMIDITY": "", "SMART_AIR_BOX_DATA_TEMPERATURE": "", "MOTION_SENSOR_DATA": "", "MOISTURE_SENSOR_DATA": "", "GAS_SENSOR_DATA": ""}  # This variable is to store all the other data combined
+FINAL_DATA = {"SMART_AIR_BOX_DATA_HUMIDITY": "", "SMART_AIR_BOX_DATA_TEMPERATURE": "", "SMART_AIR_BOX_DATA_CO2": "", "MOTION_SENSOR_DATA": "", "MOISTURE_SENSOR_DATA": "", "GAS_SENSOR_DATA": ""}  # This variable is to store all the other data combined
 
 def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
     """ MQTT callback function for received messages """
@@ -72,6 +72,7 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
 
         FINAL_DATA["SMART_AIR_BOX_DATA_HUMIDITY"] = str(SMART_AIR_BOX_DATA.get("humidity", 0))
         FINAL_DATA["SMART_AIR_BOX_DATA_TEMPERATURE"] = str(SMART_AIR_BOX_DATA.get("temperature", 0))
+        FINAL_DATA["SMART_AIR_BOX_DATA_CO2"] = str(SMART_AIR_BOX_DATA.get("co2", 0))
 
     if msg.topic == MQTT_TOPIC_MOTION_SENSOR:
         # String data (refer to sensor code file client.publish)
@@ -95,11 +96,11 @@ def on_message(client, userdata, msg):  # CANNOT HAVE ASYNC IN THIS FUNC
         FINAL_DATA["GAS_SENSOR_DATA"] = str(ast.literal_eval(GAS_SENSOR_DATA).get("analog_value", 0))
 
     # print("FINAL DATA:", FINAL_DATA)
-
+    
     # Add data to queue to be sent to main.py
     # Add data to queue safely
     if loop.is_running():
-        asyncio.run_coroutine_threadsafe(data_queue.put(FINAL_DATA.copy()), loop)
+        loop.call_soon_threadsafe(asyncio.create_task, data_queue.put(FINAL_DATA.copy()))
     else:
         print("Event loop is not running yet!")
 
@@ -113,9 +114,11 @@ async def start_mqtt_client():
     client.subscribe(MQTT_TOPIC_MOTION_SENSOR)
     client.subscribe(MQTT_TOPIC_MOISTURE_SENSOR)
     client.subscribe(MQTT_TOPIC_GAS_SENSOR)
+ 
+    # Run the MQTT loop continuously
     client.loop_start()
     while True:
-        await asyncio.sleep(1)
+        await asyncio.sleep(0.1)  # Reduce sleep time to process messages faster
 
 async def run_mqtt():
     """ Runs the MQTT client in an asyncio-compatible way. """

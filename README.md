@@ -64,7 +64,12 @@ devices:
 9. **Monitor MQTT Messages (Optional)**  
    - Use `mosquitto_sub` to view live messages from your Zigbee devices.
 
-
+## New Telegram bot
+In the even that you want to create a new telegram bot instead of the existing kitchen_safety_bot, follow the below steps:
+- Search for @BotFather in telegram. /start to start the bot.
+- /createbot to create a new bot.
+- Follow the instructions to create a new bot.
+- Copy the token and paste it in the code: tele_bot.py > BOT_TOKEN
 
 # HOW TO RUN
 
@@ -91,11 +96,3 @@ After than run "py main.py" to start the program
 - tasmota if cannot find ip address, use ip scanner and scan the hotspot then match the mac address, mac address of tasmota is 34:AB:95:A7:93:F9
 
 - Telegram: Search for @kitchen_safety_bot in telegram. /start to start the bot after this codes/server is running.
-
-
-## New Telegram bot
-In the even that you want to create a new telegram bot instead of the existing kitchen_safety_bot, follow the below steps:
-- Search for @BotFather in telegram. /start to start the bot.
-- /createbot to create a new bot.
-- Follow the instructions to create a new bot.
-- Copy the token and paste it in the code: tele_bot.py > BOT_TOKEN

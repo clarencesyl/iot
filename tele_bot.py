@@ -1,15 +1,13 @@
 import telegram
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
-import time
 import asyncio
-import json
+from data_manager import DataManager
 
 # Replace with your bot's API token and user ID
 BOT_TOKEN = '8021420031:AAHJYXHQ40stDTJxiyG1pcArayDDp4OZQEI'
 BOT_USERNAME = 'kitchen_safety_bot'
 USER_ID = 531028339
-json_data = '''{"co2":395,"formaldehyd":1,"humidity":60,"linkquality":255,"temperature":24.8,"voc":15}''' # Humidity will be int and Temperature will be float
 
 
 async def send_telegram_message(message, user_id):
@@ -33,7 +31,12 @@ async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Use /status to find out about your kitchen!")
 
 async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    await update.message.reply_text("This is an update on your environment")
+    from data_processing import KitchenSafetyMonitor
+    data = DataManager.get_data()
+
+    message = KitchenSafetyMonitor.process_status_update(data)
+
+    await update.message.reply_text(message)
 
 
 def handle_response(text:str)->str:

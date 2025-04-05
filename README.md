@@ -85,6 +85,8 @@ After that cd into the directory containing "requirements.txt" and type this com
 
 After than run "py main.py" to start the program
 
+Search for @kitchen_safety_bot in telegram. /start to start the bot after this codes/server is running.
+
 ## Setup
 
 - smart_air_box_and_plug.py change MQTT_BROKER ip address to be that of the raspberry pi ip address. Also Connect laptop to the hotspot that the raspberry pi is using.
@@ -94,5 +96,3 @@ After than run "py main.py" to start the program
 - tasmota press and hold the power button for about 15 seconds to reset then connect it to the same hotspot as raspberry pi. Use phone go to wifi while press and hold tasmota, then connect to it, a popup will appear then connect to the raspberry pi hotspot. The ip address of the tasmota will be shown, note it down.
 
 - tasmota if cannot find ip address, use ip scanner and scan the hotspot then match the mac address, mac address of tasmota is 34:AB:95:A7:93:F9
-
-- Telegram: Search for @kitchen_safety_bot in telegram. /start to start the bot after this codes/server is running.

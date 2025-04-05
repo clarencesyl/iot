@@ -7,7 +7,7 @@ from data_manager import DataManager
 # Replace with your bot's API token and user ID
 BOT_TOKEN = '8021420031:AAHJYXHQ40stDTJxiyG1pcArayDDp4OZQEI'
 BOT_USERNAME = 'kitchen_safety_bot'
-USER_ID = 531028339
+USER_ID = None
 
 
 async def send_telegram_message(message, user_id):
@@ -23,9 +23,10 @@ async def status_update(data):
     message = f"Status Update: {data}"
     await send_telegram_message(message, USER_ID)
 
-
 async def start_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Hello! I am your smart kitchen assistant. I will send you updates on your kitchen environment.")
+    global USER_ID
+    USER_ID = update.message.chat_id
 
 async def help_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text("Use /status to find out about your kitchen!")
@@ -39,17 +40,6 @@ async def status_command(update: Update, context: ContextTypes.DEFAULT_TYPE):
     await update.message.reply_text(message)
 
 
-def handle_response(text:str)->str:
-    processed:str = text.lower()
-
-    if 'status' in processed:
-        return 'status received'
-
-async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE):
-    message_type: str = update.message.chat.type # Identifies private or group chat
-    text: str = update.message.text # The incoming message
-
-    response = handle_response(text)
     print(f'User({update.message.chat_id}) sent: {message_type}: "{text}"')
 
     await send_telegram_message(response, USER_ID)
@@ -64,19 +54,11 @@ async def start_bot():
     await app.initialize()
     await app.start()
 
-    # Start other asyncio frameworks here
-    # Add some logic that keeps the event loop running until you want to shutdown
-    # Stop the other asyncio frameworks here
-    # await app.updater.stop()
-    # await app.stop()
-    # await app.shutdown()
+  
     # Commands
     app.add_handler(CommandHandler('start', start_command))
     app.add_handler(CommandHandler('help', help_command))
     app.add_handler(CommandHandler('status', status_command))
-
-    # Messages
-    app.add_handler(MessageHandler(filters.Text, handle_message))
 
     # Error handling
     app.add_error_handler(error)

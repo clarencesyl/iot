@@ -17,7 +17,7 @@ async def retrieve_data():
         # Process the data with KitchenSafetyMonitor
         await monitor.process_data(data)
 
-        await asyncio.sleep(1)
+        await asyncio.sleep(0)
 
 async def main():
     """ Main function to run the MQTT client and process the queue and telegram bot """

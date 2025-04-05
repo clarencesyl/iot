@@ -89,3 +89,13 @@ After than run "py main.py" to start the program
 - tasmota press and hold the power button for about 15 seconds to reset then connect it to the same hotspot as raspberry pi. Use phone go to wifi while press and hold tasmota, then connect to it, a popup will appear then connect to the raspberry pi hotspot. The ip address of the tasmota will be shown, note it down.
 
 - tasmota if cannot find ip address, use ip scanner and scan the hotspot then match the mac address, mac address of tasmota is 34:AB:95:A7:93:F9
+
+- Telegram: Search for @kitchen_safety_bot in telegram. /start to start the bot after this codes/server is running.
+
+
+## New Telegram bot
+In the even that you want to create a new telegram bot instead of the existing kitchen_safety_bot, follow the below steps:
+- Search for @BotFather in telegram. /start to start the bot.
+- /createbot to create a new bot.
+- Follow the instructions to create a new bot.
+- Copy the token and paste it in the code: tele_bot.py > BOT_TOKEN

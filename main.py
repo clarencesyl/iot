@@ -2,6 +2,7 @@ from tele_bot import start_bot, send_telegram_message
 from data_processing import KitchenSafetyMonitor
 from smart_air_box_and_plug import data_queue, run_mqtt, loop, turn_off_fan, turn_on_fan, toggle_power_fan
 import asyncio
+from data_manager import DataManager
 
 async def retrieve_data():
     """ Process data from the queue asynchronously """
@@ -11,6 +12,7 @@ async def retrieve_data():
     while True:
         data = await data_queue.get()  # Retrieve latest data from the queue
         print("Received Data:", data)
+        DataManager.update_data(data)
 
         # Process the data with KitchenSafetyMonitor
         await monitor.process_data(data)

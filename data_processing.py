@@ -124,6 +124,31 @@ class KitchenSafetyMonitor:
         self.humidity_start = None
         self.fire_detected = False
 
+    @staticmethod
+    def process_status_update(data):
+        message = "No kitchen data available yet. Please try again shortly."
+        if data is None:
+            return message
+
+        # Format the latest data nicely
+        gas_level = data.get("GAS_SENSOR_DATA", "N/A")
+        temp = data.get("SMART_AIR_BOX_DATA_TEMPERATURE", "N/A")
+        humidity = data.get("SMART_AIR_BOX_DATA_HUMIDITY", "N/A")
+        motion = data.get("MOTION_SENSOR_DATA", "N/A")
+        smoke = data.get("SMOKE_SENSOR_DATA", "N/A")
+        moisture = data.get("MOISTURE_SENSOR_DATA", "N/A")
+
+        message = (
+            f"🌡️ Temperature: {temp}\n"
+            f"💧 Humidity: {humidity}\n"
+            f"🔥 Smoke Level: {smoke}\n"
+            f"🛢️ Gas Level: {gas_level}\n"
+            f"🚶 Motion Sensor: {motion}\n"
+            f"🌊 Moisture: {moisture}"
+        )
+
+        return message
+
 
 # Example usage:
 if __name__ == "__main__":

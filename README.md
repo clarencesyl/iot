@@ -20,12 +20,31 @@
 4. **Configure Zigbee2MQTT**  
    - Edit the `configuration.yaml`:
 
-     -  Set `mqtt.server` to `mqtt://localhost`
+     - Set `mqtt.server` to `mqtt://localhost`
      - Use the correct `serial.port` path (e.g., `/dev/ttyACM0`)
      - Enable the frontend for web access
-     - Change adapter to `ember` if required
+     - Change adapter to `ember` if required'
+   
+   - Here is an example of this project's configuration file:
+   
+```
+homeassistant:
+  enabled: true
+mqtt:
+  base_topic: zigbee2mqtt
+  server: mqtt://localhost
+serial:
+  port: /dev/ttyACM0
+  adapter: ember
+frontend:
+  enabled: true
+  port: 8080
+version: 4
+devices:
+  '0xa4c138a5d0b49a7c':
+    friendly_name: 'SmartAirBox'
+```
 
-   - A copy of the config file can be found in the `config` folder.
 
 5. **Start Zigbee2MQTT**  
    - Run the service using `npm start` from the Zigbee2MQTT directory.

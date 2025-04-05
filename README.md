@@ -1,4 +1,4 @@
-# Official readme for submission, remove this line once done
+# Team 21 IoT
 
 ## Raspberry Pi and Smart Air Box Setup
 
